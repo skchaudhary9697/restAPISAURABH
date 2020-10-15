@@ -1,0 +1,91 @@
+exports.userRole = (req,res,next) =>{
+let user_info;
+
+db.collection('users').where('email','==', req.body.email).get().then((doc) =>{
+return doc.docs.forEach(user => (user_info = user.data()
+))
+}).then(() =>{
+req.user = user_info
+return next()
+}).catch((error) =>{
+return
+res.status(400).json({error:'unable to find user'})
+})
+}
+
+exports.signUp = (req,res) =>{
+const newUser = {
+email:req.body.email,
+fullName: req.body.fullName,
+role: req.body.role,
+phoneNumber: req.body.phoneNumber,
+}
+
+//TODO: validate data
+let token="
+let userId="
+
+db.collection('users').where('email','==',req.body.email).get().then(data =>{
+if(data.exists){
+       return
+res.status(400).json({handle:'this email already registered'})
+}
+else{
+     return 
+firebase.auth().createUserWithEmailAndPassword(req.body.email, req.body.password)
+}
+}).then(data) =>{
+   userId = data.user.uid
+   return data.user.getIdToken()
+   }).then (tokenId =>{
+        token = tokenId
+		return
+db.collection('users').doc(userId).set(new user);
+}).then(() =>{
+     return
+  res.status(201).json({token,uid:userId,user:newUser)})
+})
+ .catch(err=>{
+     if(err.code ==="auth/email-already-in-use"){
+	  return
+	res.status(400).json({error:'email already exists'})
+	}
+	else{
+	return
+	res.status(500).json({general:'something went wrong please try again'})
+	}
+ })
+}
+
+const functions = require('firebase-functions');
+const express = require('express')
+const app = express()
+const {loginUser, signUp} = require('./handlers/user')
+const {userRole} = require('./handlers/user')
+const cors = require('cors')
+
+app.use(cors());
+app.options('*', cors());
+
+app.use(express.urlencoded({extended:false}))
+app.use(express.json())
+
+
+app.all('/*', function(req,res,next){
+     res.header("Access-Control-Allow-Origin","*");
+	 
+res.header("Access-Control-Allow-Headers", "X-Requested-With");
+
+res.header("Access-Control-Allow-Methods", "*")
+  next();
+});
+
+
+app.post('/login', userRole, loginUser)
+app.post('/signup', signUp)
+
+exports.api = functions.http.onRequest(app);
+
+
+
+  
